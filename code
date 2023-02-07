@@ -1,0 +1,47 @@
+import tweepy
+import random
+import time
+
+# Twitter API credentials
+consumer_key = "nLioil3NvtOGcbBA1zpmitqg7"
+consumer_secret = "GoSP3aYrBgP4vFpf9WTnq02TaOrqahsWu3X70v26xApPCSPSSs"
+access_token = "1556678980077584398-ZYwiaZuqcOFSSXR34Bf2yG6UEbVWlY"
+access_token_secret = "MrxjmC5lKnGGdiu52oQUK6JTXVyhak3PkdIZmIXaCbBVE"
+
+# Authorization and initialization
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+api = tweepy.API(auth)
+
+keywords = ["مرتضى منصور", "مرتضي منصور", "اسد الزمالك"]
+
+# Define the reply message
+replies = ["الموسيقار مرتضى منصور", "مرتضى طرطور", "مرتضى مدكور", "مرتضى جعور"]
+
+try:
+    with open("replied_to.txt", "r") as f:
+        replied_to = set(map(int, f.read().splitlines()))
+except FileNotFoundError:
+    replied_to = set()
+
+# Search for tweets containing the keywords
+tweets = tweepy.Cursor(api.search_tweets, q=keywords, tweet_mode='extended').items(100)
+
+# Reply to each tweet
+for tweet in tweets:
+    if tweet.id in replied_to:
+        continue
+    reply = random.choice(replies)
+    try:
+        api.update_status(
+            f"@{tweet.user.screen_name} {reply}",
+            in_reply_to_status_id=tweet.id,
+            auto_populate_reply_metadata=True
+        )
+        replied_to.add(tweet.id)
+        with open("replied_to.txt", "a") as f:
+            f.write(str(tweet.id) + "\n")
+        print(f"Replied to tweet {tweet.id} with {reply}")
+    except tweepy.TwitterServerError as error:
+        print(f"Failed to reply to tweet {tweet.id}: {error}")
+    time.sleep(20)
